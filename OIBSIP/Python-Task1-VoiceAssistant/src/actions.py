@@ -128,23 +128,32 @@ def answer_general_qa(query):
     except Exception as e:
         print(f"DuckDuckGo QA error: {e}")
         
-    # Step 2: Fallback to Wikipedia API
+    # Step 2: Fallback to Wikipedia SEARCH API to resolve actual titles (highly robust)
     try:
-        wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&titles={urllib.parse.quote(query)}&redirects=1"
-        res = requests.get(wiki_url, timeout=5)
-        if res.status_code == 200:
-            data = res.json()
-            pages = data.get("query", {}).get("pages", {})
-            for page_id, page in pages.items():
-                if page_id != "-1":
-                    extract = page.get("extract", "")
-                    if extract:
-                        sentences = extract.split(". ")
-                        return ". ".join(sentences[:2]) + "."
+        search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&format=json"
+        search_res = requests.get(search_url, timeout=5)
+        if search_res.status_code == 200:
+            search_data = search_res.json()
+            search_results = search_data.get("query", {}).get("search", [])
+            if search_results:
+                best_title = search_results[0]["title"]
+                
+                # Step 3: Fetch Wikipedia extract for resolved title
+                wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&titles={urllib.parse.quote(best_title)}&redirects=1"
+                res = requests.get(wiki_url, timeout=5)
+                if res.status_code == 200:
+                    data = res.json()
+                    pages = data.get("query", {}).get("pages", {})
+                    for page_id, page in pages.items():
+                        if page_id != "-1":
+                            extract = page.get("extract", "")
+                            if extract:
+                                sentences = extract.split(". ")
+                                return ". ".join(sentences[:2]) + "."
     except Exception as e:
         print(f"Wikipedia QA error: {e}")
         
-    return f"I searched my knowledge base for '{query}', but couldn't find a direct answer. Would you like me to search the web instead?"
+    return None
 
 def send_email(recipient, message):
     config = load_config()

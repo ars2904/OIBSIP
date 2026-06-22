@@ -39,6 +39,7 @@ class VoiceAssistantGUI:
         self.reminder = ReminderManager(self.voice)
         
         # Thread controls
+        self.last_failed_query = None
         self.listening_active = False
         self.pulse_phase = 0
         self.animation_running = False
@@ -440,6 +441,28 @@ class VoiceAssistantGUI:
         threading.Thread(target=_listen_thread, daemon=True).start()
 
     def handle_assistant_request(self, query):
+        # 0. Check for pending web search confirmation
+        if self.last_failed_query:
+            query_clean = query.lower().strip()
+            # If user answers yes/sure
+            if query_clean in ["yes", "yeah", "yep", "sure", "go ahead", "do it", "ok", "okay", "search"]:
+                q_to_search = self.last_failed_query
+                self.last_failed_query = None
+                reply = perform_web_search(q_to_search)
+                self.voice.speak(reply)
+                self.queue_put("log_assistant", reply)
+                return
+            # If user answers no/cancel
+            elif query_clean in ["no", "nope", "dont", "no thank you", "no thanks", "cancel", "nevermind"]:
+                self.last_failed_query = None
+                reply = "Alright, no problem. Let me know if you need anything else!"
+                self.voice.speak(reply)
+                self.queue_put("log_assistant", reply)
+                return
+            else:
+                # User typed/said something else entirely, reset pending and continue
+                self.last_failed_query = None
+
         # 1. Custom Command Exact Match First
         is_custom = execute_custom_command(query, self.voice)
         if is_custom:
@@ -500,6 +523,9 @@ class VoiceAssistantGUI:
         elif intent == "general_qa":
             q = params.get("query")
             reply = answer_general_qa(q)
+            if reply is None:
+                self.last_failed_query = q
+                reply = "I searched my knowledge base, but couldn't find a direct answer. Would you like me to search the web instead?"
             self.voice.speak(reply)
             self.queue_put("log_assistant", reply)
             
@@ -554,6 +580,9 @@ class VoiceAssistantGUI:
         else:
             # General fallback QA Search
             reply = answer_general_qa(query)
+            if reply is None:
+                self.last_failed_query = query
+                reply = "I searched my knowledge base, but couldn't find a direct answer. Would you like me to search the web instead?"
             self.voice.speak(reply)
             self.queue_put("log_assistant", reply)
 
