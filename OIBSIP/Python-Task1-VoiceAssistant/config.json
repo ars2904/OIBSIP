@@ -20,6 +20,10 @@
     "hello friend": {
       "type": "speak",
       "data": "Hello my friend! How can I help you today?"
+    },
+    "open mail": {
+      "type": "url",
+      "data": "https://mail.google.com"
     }
   }
 }
