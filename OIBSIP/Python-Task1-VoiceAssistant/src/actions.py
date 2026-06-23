@@ -114,10 +114,14 @@ def answer_general_qa(query):
     if not query:
         return "What is your question?"
         
+    headers = {
+        "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36"
+    }
+        
     # Step 1: Query DuckDuckGo Instant Answer API (Free, simple, fast)
     try:
         ddg_url = f"https://api.duckduckgo.com/?q={urllib.parse.quote(query)}&format=json&no_html=1&skip_disambig=1"
-        res = requests.get(ddg_url, timeout=5)
+        res = requests.get(ddg_url, headers=headers, timeout=5)
         if res.status_code == 200:
             data = res.json()
             abstract = data.get("AbstractText", "")
@@ -131,7 +135,7 @@ def answer_general_qa(query):
     # Step 2: Fallback to Wikipedia SEARCH API to resolve actual titles (highly robust)
     try:
         search_url = f"https://en.wikipedia.org/w/api.php?action=query&list=search&srsearch={urllib.parse.quote(query)}&format=json"
-        search_res = requests.get(search_url, timeout=5)
+        search_res = requests.get(search_url, headers=headers, timeout=5)
         if search_res.status_code == 200:
             search_data = search_res.json()
             search_results = search_data.get("query", {}).get("search", [])
@@ -140,7 +144,7 @@ def answer_general_qa(query):
                 
                 # Step 3: Fetch Wikipedia extract for resolved title
                 wiki_url = f"https://en.wikipedia.org/w/api.php?action=query&format=json&prop=extracts&exintro=1&explaintext=1&titles={urllib.parse.quote(best_title)}&redirects=1"
-                res = requests.get(wiki_url, timeout=5)
+                res = requests.get(wiki_url, headers=headers, timeout=5)
                 if res.status_code == 200:
                     data = res.json()
                     pages = data.get("query", {}).get("pages", {})
