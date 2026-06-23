@@ -155,6 +155,14 @@ class NLUParser:
                 "params": {"city": city}
             }
             
+        # Fallback Weather: contains weather/temperature/forecast (default to None city)
+        if any(w in text_lower for w in ["weather", "temperature", "forecast"]):
+            return {
+                "intent": "weather",
+                "confidence": 0.85,
+                "params": {"city": None}
+            }
+            
         # CHECK WEB SEARCH INTENT
         # Pattern: search (for) [query], google [query]
         search_match = re.search(r'\b(?:search\s+for|search|google|lookup|look\s+up)\s+(.*)', text_lower)
@@ -166,6 +174,23 @@ class NLUParser:
                 "params": {"query": query}
             }
             
+        # CHECK TIME/DATE INTENT
+        time_queries = [
+            r"\b(?:what|whats|what's)\s+(?:is\s+)?(?:the\s+)?(?:time|date|day)\b",
+            r"\btell\s+(?:me\s+)?(?:the\s+)?(?:time|date|day)\b",
+            r"\bwhat\s+day\s+(?:is\s+)?today\b",
+            r"\b(?:current|today's|todays)\s+(?:time|date|day)\b",
+            r"\btime\b",
+            r"\bdate\b"
+        ]
+        if any(re.search(pat, text_lower) for pat in time_queries):
+            if "remind" not in text_lower and "timer" not in text_lower:
+                return {
+                    "intent": "time_date",
+                    "confidence": 0.95,
+                    "params": {}
+                }
+                
         # CHECK GENERAL QA INTENT
         # Pattern: who is/was [query], what is/was [query], tell me about [query]
         qa_match = re.search(r'\b(?:who\s+is|who\s+was|what\s+is|what\s+was|tell\s+me\s+about|define)\s+(.*)', text_lower)
