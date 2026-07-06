@@ -118,6 +118,7 @@ def handle_disconnect():
                 'message': f"{username} has left the chat.",
                 'timestamp': timestamp,
                 'is_system': True
+            # pyrefly: ignore [unexpected-keyword]
             }, room=current_room)
             
         del active_connections[sid]
@@ -150,6 +151,7 @@ def handle_join(data):
             'message': f"{username} has left the room.",
             'timestamp': timestamp,
             'is_system': True
+        # pyrefly: ignore [unexpected-keyword]
         }, room=old_room)
         
     # Join new room
@@ -186,6 +188,7 @@ def handle_join(data):
         'message': f"{username} has joined the room.",
         'timestamp': timestamp,
         'is_system': True
+    # pyrefly: ignore [unexpected-keyword]
     }, room=room_name, include_self=False)
 
 @socketio.on('leave')
@@ -206,6 +209,7 @@ def handle_leave(data):
             'message': f"{username} has left the room.",
             'timestamp': timestamp,
             'is_system': True
+        # pyrefly: ignore [unexpected-keyword]
         }, room=room_name)
 
 @socketio.on('send_message')
@@ -232,6 +236,7 @@ def handle_send_message(data):
         'message': message_content,
         'timestamp': timestamp,
         'is_system': False
+    # pyrefly: ignore [unexpected-keyword]
     }, room=room_name)
 
 @socketio.on('typing')
@@ -249,6 +254,7 @@ def handle_typing(data):
         emit('typing_status', {
             'username': username,
             'is_typing': is_typing
+        # pyrefly: ignore [unexpected-keyword]
         }, room=room_name, include_self=False)
 
 if __name__ == '__main__':
